@@ -62,7 +62,7 @@ rule C_COMPILER__STM32_Drivers_unscanned_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SC:\Users\decju\OneDrive\Bureau\TP1_robotique -BC:\Users\decju\OneDrive\Bureau\TP1_robotique\build\Debug
+  command = "C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -SC:\Users\decju\OneDrive\Bureau\TP_robotique\TP_ROBOTIQUE\TP1 -BC:\Users\decju\OneDrive\Bureau\TP_robotique\TP_ROBOTIQUE\TP1\build\Debug
   description = Re-running CMake...
   generator = 1
 
