@@ -355,33 +355,53 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
 {
   uint32_t taux;
 
-  /* Sauvegarde etape 1 : redressement synchrone
-  TIM1->CCR1 = taux;
-  TIM1->CCR2 = PERIPWM - taux;
-  */
+  /* Chaque partie du TP3 est gardee ci-dessous en commentaire.
+   * Une seule partie doit etre active a la fois : decommenter celle a tester.
+   * La partie active est la derniere du TP (partie 5). */
 
-  /* PWM double : meme compare sur les 2 branches
-  TIM1->CCR1 = taux;
-  TIM1->CCR2 = TIM1->CCR1;
-  */
+  /* ----------------------------------------------------------------------
+   * Partie 1 : redressement synchrone (taux / PERIPWM - taux)
+   * Les deux branches commutent, les 4 transistors sont actifs.
+   * Tension moyenne moteur = (2*taux/PERIPWM - 1) * 12 V :
+   * nulle au milieu du potentiometre, positive ou negative de part et d'autre.
+   * ---------------------------------------------------------------------- */
+  // taux = (uint32_t)resultats[0] * PERIPWM / 4096;
+  // TIM1->CCR1 = taux;
+  // TIM1->CCR2 = PERIPWM - taux;
 
-  /* PWM simple (sauvegarde)
-  TIM1->CCR1 = taux;
-  TIM1->CCR2 = PERIPWM;
+  /* ----------------------------------------------------------------------
+   * Partie 2 : PWM double
+   * Meme niveau de comparaison sur les deux branches : la paire de
+   * transistors opposes commute en meme temps.
+   * ---------------------------------------------------------------------- */
+  // taux = (uint32_t)resultats[0] * PERIPWM / 4096;
+  // TIM1->CCR1 = taux;
+  // TIM1->CCR2 = TIM1->CCR1;
 
-  bloque les transistors 2 et 3 -> faire varier le potentiomètre
-   fait uniquement varier la vitesse alors qu'avant ça créait aussi
-  une différence de potentiel positive et négative et les 4 transistors commutaient
-  uint32_t tmpccer = TIM1->CCER;
-  tmpccer &= 0xFFAA;
-  tmpccer |= TIM_CCER_CC1NE | TIM_CCER_CC2E;
-  TIM1->CCER = tmpccer;
-  */
+  /* ----------------------------------------------------------------------
+   * Partie 3 : PWM simple (un seul sens)
+   * Seul le transistor du haut module, le transistor du bas de l'autre
+   * branche conduit en permanence (CCR = PERIPWM).
+   * Les transistors 2 et 3 sont bloques : le potentiometre fait uniquement
+   * varier la vitesse, alors qu'avant il creait une difference de potentiel
+   * positive ou negative et les 4 transistors commutaient.
+   * ---------------------------------------------------------------------- */
+  // taux = (uint32_t)resultats[0] * PERIPWM / 4096;
+  // TIM1->CCR1 = taux;
+  // TIM1->CCR2 = PERIPWM;
+  // uint32_t tmpccer = TIM1->CCER;
+  // tmpccer &= 0xFFAA;                           /* efface les bits 0, 2, 4, 6 */
+  // tmpccer |= TIM_CCER_CC1NE | TIM_CCER_CC2E;
+  // TIM1->CCER = tmpccer;
 
-  /* PWM simple dans les deux sens : arret au milieu du potentiometre */
+  /* ----------------------------------------------------------------------
+   * Partie 4 : PWM simple dans les deux sens
+   * Arret au milieu du potentiometre (ADC_MILIEU), le sens depend du cote.
+   * CCER active la paire de transistors opposes correspondant au sens.
+   * ---------------------------------------------------------------------- */
   // uint32_t tmpccer = TIM1->CCER;
   // tmpccer &= 0xFFAA;
-
+  //
   // if (resultats[0] >= ADC_MILIEU)
   // {
   //   /* Sens 1 : transistor 1 (haut) module, transistor 4 (bas) conduit */
@@ -398,29 +418,32 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
   //   TIM1->CCR2 = taux;
   //   tmpccer |= TIM_CCER_CC2E | TIM_CCER_CC1NE;
   // }
-
+  //
   // TIM1->CCER = tmpccer;
 
-  /* PWM simple avec redressement synchrone */
-  /* PWM simple dans les deux sens : arret au milieu du potentiometre */
-
+  /* ----------------------------------------------------------------------
+   * Partie 5 (active) : PWM simple avec redressement synchrone
+   * Pas de gestion de CCER : toutes les sorties sont actives, les deux
+   * transistors de la branche qui module commutent en complementaire.
+   * La branche qui doit conduire en permanence recoit CCR = 0 (et pas
+   * PERIPWM, sinon ce serait son transistor du haut qui resterait ferme).
+   * ---------------------------------------------------------------------- */
   if (resultats[0] >= ADC_MILIEU)
   {
-/* Sens 1 : transistor 1 module, 2 en complementaire, transistor 4 conduit */
+    /* Sens 1 : transistor 1 module, 2 en complementaire, transistor 4 conduit */
     taux = (uint32_t)(resultats[0] - ADC_MILIEU) * PERIPWM / ADC_MILIEU;
     TIM1->CCR1 = taux;
     TIM1->CCR2 = 0;
   }
   else
   {
-/* Sens 2 : transistor 3 module, 4 en complementaire, transistor 2 conduit */
+    /* Sens 2 : transistor 3 module, 4 en complementaire, transistor 2 conduit */
     taux = (uint32_t)(ADC_MILIEU - resultats[0]) * PERIPWM / ADC_MILIEU;
     TIM1->CCR1 = 0;
     TIM1->CCR2 = taux;
   }
-  
 
-
+  /* Clignotement de la LED pour verifier que l'interruption tourne */
   compteur++;
   if (compteur >= 20000)
   {

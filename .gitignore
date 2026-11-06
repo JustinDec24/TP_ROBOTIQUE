@@ -1,0 +1,14 @@
+# Fichiers de compilation (regeneres a chaque build)
+build/
+Debug/
+Release/
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.map
+*.list
+
+# Reglages personnels de l'IDE (STM32CubeIDE / Eclipse)
+.metadata/
