@@ -373,10 +373,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
    * Partie 2 : PWM double
    * Meme niveau de comparaison sur les deux branches : la paire de
    * transistors opposes commute en meme temps.
+   * CCER n'active que les sorties 1 et 2N (transistors 1 et 4).
    * ---------------------------------------------------------------------- */
   // taux = (uint32_t)resultats[0] * PERIPWM / 4096;
   // TIM1->CCR1 = taux;
   // TIM1->CCR2 = TIM1->CCR1;
+  // uint32_t tmpccer = TIM1->CCER;
+  // tmpccer &= 0xFFAA;                           /* efface les bits 0, 2, 4, 6 */
+  // tmpccer |= TIM_CCER_CC1E | TIM_CCER_CC2NE;
+  // TIM1->CCER = tmpccer;
 
   /* ----------------------------------------------------------------------
    * Partie 3 : PWM simple (un seul sens)
